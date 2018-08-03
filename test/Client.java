@@ -1,9 +1,11 @@
+import data.SimplePacket;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.Arrays;
 
 public class Client {
 
@@ -78,6 +80,34 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
             return;
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+
+        while (true) {
+            buffer.clear();
+
+            try {
+                InetSocketAddress clientAddress = (InetSocketAddress) channel.receive(buffer);
+                buffer.flip();
+
+                if (buffer.remaining() > 0) {
+                    data = new byte[buffer.remaining()];
+                    buffer.get(data);
+
+                    StringBuffer sb = new StringBuffer();
+
+                    for (int i = 0; i < data.length; i++) {
+                        sb.append((char) data[i]);
+                    }
+
+                    System.out.println(sb.toString());
+
+                    break;
+                }
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 

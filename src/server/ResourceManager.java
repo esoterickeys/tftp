@@ -9,7 +9,6 @@ import java.util.concurrent.BlockingQueue;
 
 public class ResourceManager {
 
-
     private final int serverPort;
 
     private ConnectionManager connectionManager;

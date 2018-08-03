@@ -27,10 +27,10 @@ public class Server {
     }
 
     private void initialize() {
-        resourceManager = new ResourceManager(serverPort, state);
-
         state = new State();
         state.setRunning(false);
+
+        resourceManager = new ResourceManager(serverPort, state);
 
         connectionManager = new ConnectionManager(resourceManager);
         dataManager = new DataManager(resourceManager);
