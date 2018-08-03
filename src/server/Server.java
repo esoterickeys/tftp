@@ -1,17 +1,9 @@
 package server;
 
-import data.SimplePacket;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
 public class Server {
     private State state;
 
-    private Map<Integer, BlockingQueue<SimplePacket>> pipes;
-
+    private ResourceManager resourceManager;
     private ConnectionManager connectionManager;
     private DataManager dataManager;
 
@@ -27,63 +19,41 @@ public class Server {
 
         try {
             server.run();
-        } catch (Exception e) {
-            server.getState().setRunning(false);
-
-            server.connectionManager.terminate();
-            server.dataManager.terminate();
+        } catch (InterruptedException e) {
+            server.terminate();
 
             System.exit(0);
         }
     }
 
-    public void createOutputDataPipe(int port) {
-        if (pipes.get(port) == null) {
-            BlockingQueue<SimplePacket> sendPipe = new ArrayBlockingQueue<>(100);
-            pipes.put(port, sendPipe);
-
-            connectionManager.addOutputChannel(port);
-        }
-    }
-
-    public void addDataToPipe(int port, SimplePacket data) {
-        try {
-            pipes.get(port).put(data);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void initialize() {
-        pipes = new HashMap<>();
-
-        BlockingQueue<SimplePacket> rcvPipe = new ArrayBlockingQueue<>(100);
-        pipes.put(serverPort, rcvPipe);
+        resourceManager = new ResourceManager(serverPort, state);
 
         state = new State();
         state.setRunning(false);
 
-        connectionManager = new ConnectionManager(this);
-        dataManager = new DataManager(this);
+        connectionManager = new ConnectionManager(resourceManager);
+        dataManager = new DataManager(resourceManager);
+
+        resourceManager.loadConnectionManager(connectionManager);
     }
 
-    private void run() {
+    private void run() throws InterruptedException {
         state.setRunning(true);
 
-        connectionManager.run();
-        dataManager.run();
+        Thread connectionThread = new Thread(connectionManager);
+        Thread dataThread = new Thread(dataManager);
 
+        connectionThread.start();
+        dataThread.start();
+
+        dataThread.join();
     }
 
-    public State getState() {
-        return state;
-    }
+    private void terminate() {
+        state.setRunning(false);
 
-    public Map<Integer, BlockingQueue<SimplePacket>> getPipes() {
-        return pipes;
-    }
-
-    public int getServerPort() {
-        return serverPort;
+        connectionManager.terminate();
+        dataManager.terminate();
     }
 }

@@ -9,10 +9,10 @@ import java.nio.channels.DatagramChannel;
 
 public class InputChannel implements Runnable {
     private DatagramChannel channel;
-    private final Server server;
+    private final ResourceManager resourceManager;
 
-    public InputChannel(final Server server) {
-        this.server = server;
+    public InputChannel(final ResourceManager resourceManager) {
+        this.resourceManager = resourceManager;
 
         initialize();
     }
@@ -21,7 +21,7 @@ public class InputChannel implements Runnable {
     public void run() {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
 
-        while (server.getState().isRunning()) {
+        while (resourceManager.getState().isRunning()) {
             buffer.clear();
 
             try {
@@ -34,7 +34,7 @@ public class InputChannel implements Runnable {
 
                     SimplePacket packet = new SimplePacket(data, clientAddress);
 
-                    server.getPipes().get(server.getServerPort()).put(packet);
+                    resourceManager.getPipes().get(resourceManager.getServerPort()).put(packet);
                 }
             } catch (IOException | InterruptedException e) {
                 System.out.println(e.getMessage());
@@ -71,7 +71,7 @@ public class InputChannel implements Runnable {
     }
 
     private void bindChannel() {
-        InetSocketAddress socket = new InetSocketAddress("127.0.0.1", server.getServerPort());
+        InetSocketAddress socket = new InetSocketAddress("127.0.0.1", resourceManager.getServerPort());
 
         try {
             channel.socket().bind(socket);

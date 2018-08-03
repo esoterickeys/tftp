@@ -8,27 +8,27 @@ import java.util.Set;
 
 public class DataManager implements Runnable {
 
-    private Server server;
+    private final ResourceManager resourceManager;
 
     Map<Integer, DataProcessor> dataProcessors;
     Map<Integer, Thread> dataProcessorThreads;
 
-    public DataManager(Server server) {
-        this.server = server;
+    public DataManager(final ResourceManager resourceManager) {
+        this.resourceManager = resourceManager;
 
         initialize();
     }
 
     @Override
     public void run() {
-        while (server.getState().isRunning()) {
+        while (resourceManager.getState().isRunning()) {
             try {
-                SimplePacket data = server.getPipes().get(server.getServerPort()).take();
+                SimplePacket data = resourceManager.getPipes().get(resourceManager.getServerPort()).take();
 
                 if (dataProcessors.get(data.header.getPort()) == null) {
-                    server.createOutputDataPipe(data.header.getPort());
+                    resourceManager.createOutputDataPipe(data.header.getPort());
 
-                    DataProcessor dataProcessor = new DataProcessor(data.header.getPort(), server);
+                    DataProcessor dataProcessor = new DataProcessor(data.header.getPort(), resourceManager);
                     Thread dataProcessorThread = new Thread(dataProcessor);
 
                     dataProcessors.put(data.header.getPort(), dataProcessor);

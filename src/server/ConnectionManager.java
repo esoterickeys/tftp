@@ -3,19 +3,20 @@ package server;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ConnectionManager {
+public class ConnectionManager implements Runnable {
 
     Map<Integer, Thread> channelThreads;
-    private final Server server;
+    private final ResourceManager resourceManager;
 
-    public ConnectionManager(final Server server) {
-        this.server = server;
+    public ConnectionManager(final ResourceManager resourceManager) {
+        this.resourceManager = resourceManager;
 
         initialize();
     }
 
+    @Override
     public void run() {
-        channelThreads.get(server.getServerPort()).start();
+        channelThreads.get(resourceManager.getServerPort()).start();
     }
 
     public void terminate() {
@@ -34,7 +35,7 @@ public class ConnectionManager {
             return;
         }
 
-        OutputChannel outputChannel = new OutputChannel(port, server);
+        OutputChannel outputChannel = new OutputChannel(port, resourceManager);
         Thread serverOutputThread = new Thread(outputChannel);
 
         channelThreads.put(port, serverOutputThread);
@@ -43,10 +44,10 @@ public class ConnectionManager {
     }
 
     private void initialize() {
-        InputChannel inputChannel = new InputChannel(server);
+        InputChannel inputChannel = new InputChannel(resourceManager);
         Thread serverInputThread = new Thread(inputChannel);
 
         channelThreads = new HashMap<>();
-        channelThreads.put(server.getServerPort(), serverInputThread);
+        channelThreads.put(resourceManager.getServerPort(), serverInputThread);
     }
 }

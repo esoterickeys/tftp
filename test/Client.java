@@ -1,11 +1,9 @@
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.Arrays;
 
 public class Client {
 
@@ -14,7 +12,7 @@ public class Client {
     }
 
     @Test
-    public void test() {
+    public void sendRrq() {
         DatagramChannel channel = null;
 
         try {
@@ -35,7 +33,7 @@ public class Client {
 
         InetSocketAddress serverSocket = new InetSocketAddress("127.0.0.1", 60);
 
-        byte[] data = generateRrq("Test.txt", "octet");
+        byte[] data = generateRrq("File.txt", "octet");
 
         ByteBuffer output = ByteBuffer.wrap(data);
 
@@ -45,48 +43,41 @@ public class Client {
             e.printStackTrace();
             return;
         }
+    }
 
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+    @Test
+    public void sendAck() {
+        byte block = 1;
 
-        boolean isRunning = true;
+        DatagramChannel channel = null;
 
-        while (isRunning) {
-            buffer.clear();
+        try {
+            channel = DatagramChannel.open();
+        } catch (IOException ioe) {
+            System.out.println(ioe.getMessage());
+            return;
+        }
 
-            try {
-                InetSocketAddress clientAddress = (InetSocketAddress) channel.receive(buffer);
-                buffer.flip();
+        InetSocketAddress socket = new InetSocketAddress("127.0.0.1", 63);
 
-                if (buffer.remaining() > 0) {
-                    System.out.println(clientAddress.getHostName());
-                    System.out.println(clientAddress.getPort());
+        try {
+            channel.socket().bind(socket);
+        } catch (IOException ioe) {
+            System.out.println(ioe.getMessage());
+            return;
+        }
 
-                    byte[] response = new byte[buffer.remaining()];
-                    buffer.get(response);
+        InetSocketAddress serverSocket = new InetSocketAddress("127.0.0.1", 60);
 
-                    byte opsCode = response[1];
-                    StringBuffer sb = new StringBuffer();
+        byte[] data = generateAck(block);
 
-                    if (opsCode == 5) {
-                        for (int i = 4; i < response.length; i++) {
-                            if (response[i] == 0) {
-                                break;
-                            }
+        ByteBuffer output = ByteBuffer.wrap(data);
 
-                            sb.append((char) response[i]);
-                        }
-
-                        System.out.println(sb.toString());
-                    }
-
-                    Assert.assertEquals(5, response[1]);
-
-                    isRunning = false;
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                return;
-            }
+        try {
+            channel.send(output, serverSocket);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
         }
     }
 
@@ -112,5 +103,16 @@ public class Client {
         rrqData[pos++] = 0;
 
         return rrqData;
+    }
+
+    private byte[] generateAck(byte block) {
+        byte[] ackData = new byte[4];
+
+        ackData[0] = 0;
+        ackData[1] = 4;
+        ackData[2] = 0;
+        ackData[3] = block;
+
+        return ackData;
     }
 }

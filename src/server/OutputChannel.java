@@ -9,21 +9,21 @@ import java.nio.channels.DatagramChannel;
 
 public class OutputChannel implements Runnable {
     private DatagramChannel channel;
-    private final Server server;
+    private final ResourceManager resourceManager;
     private int port;
 
-    public OutputChannel(int port, final Server server) {
+    public OutputChannel(int port, final ResourceManager resourceManager) {
         this.port = port;
-        this.server = server;
+        this.resourceManager = resourceManager;
 
         initialize();
     }
 
     @Override
     public void run() {
-        while (server.getState().isRunning()) {
+        while (resourceManager.getState().isRunning()) {
             try {
-                SimplePacket data = server.getPipes().get(port).take();
+                SimplePacket data = resourceManager.getPipes().get(port).take();
 
                 ByteBuffer output = ByteBuffer.wrap(data.data);
 
