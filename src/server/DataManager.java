@@ -10,8 +10,8 @@ public class DataManager implements Runnable {
 
     private final ResourceManager resourceManager;
 
-    Map<Integer, DataProcessor> dataProcessors;
-    Map<Integer, Thread> dataProcessorThreads;
+    private Map<Integer, DataProcessor> dataProcessors;
+    private Map<Integer, Thread> dataProcessorThreads;
 
     public DataManager(final ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
@@ -28,7 +28,7 @@ public class DataManager implements Runnable {
                 if (dataProcessors.get(data.header.getPort()) == null) {
                     resourceManager.createOutputDataPipe(data.header.getPort());
 
-                    DataProcessor dataProcessor = new DataProcessor(data.header.getPort(), resourceManager);
+                    DataProcessor dataProcessor = new DataProcessor(resourceManager);
                     Thread dataProcessorThread = new Thread(dataProcessor);
 
                     dataProcessors.put(data.header.getPort(), dataProcessor);

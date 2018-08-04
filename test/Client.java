@@ -20,7 +20,7 @@ public class Client {
     }
 
     @Test
-    public void sendWrq() {
+    public void testWriteRequestOperation() {
         DatagramChannel channel = null;
 
         try {
@@ -118,7 +118,7 @@ public class Client {
     }
 
     @Test
-    public void sendRrq() {
+    public void testReadRequestOperation() {
         DatagramChannel channel = null;
 
         try {
@@ -212,70 +212,6 @@ public class Client {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void sendAck() {
-        byte block = 1;
-
-        DatagramChannel channel = null;
-
-        try {
-            channel = DatagramChannel.open();
-        } catch (IOException ioe) {
-            System.out.println(ioe.getMessage());
-            return;
-        }
-
-        InetSocketAddress socket = new InetSocketAddress("127.0.0.1", 63);
-
-        try {
-            channel.socket().bind(socket);
-        } catch (IOException ioe) {
-            System.out.println(ioe.getMessage());
-            return;
-        }
-
-        InetSocketAddress serverSocket = new InetSocketAddress("127.0.0.1", 60);
-
-        byte[] data = generateAck(block);
-
-        ByteBuffer output = ByteBuffer.wrap(data);
-
-        try {
-            channel.send(output, serverSocket);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-
-        while (true) {
-            buffer.clear();
-
-            try {
-                InetSocketAddress clientAddress = (InetSocketAddress) channel.receive(buffer);
-                buffer.flip();
-
-                if (buffer.remaining() > 0) {
-                    data = new byte[buffer.remaining()];
-                    buffer.get(data);
-
-                    StringBuffer sb = new StringBuffer();
-
-                    for (int i = 0; i < data.length; i++) {
-                        sb.append((char) data[i]);
-                    }
-
-                    System.out.println(sb.toString());
-
-                    break;
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
         }
     }
 

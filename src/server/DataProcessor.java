@@ -15,15 +15,13 @@ import java.util.concurrent.BlockingQueue;
 
 public class DataProcessor implements Runnable {
 
-    private final int sourcePort;
     private final ResourceManager resourceManager;
     private BlockingQueue<SimplePacket> queue;
 
     private MessageState msgState;
 
 
-    public DataProcessor(final int sourcePort, final ResourceManager resourceManager) {
-        this.sourcePort = sourcePort;
+    public DataProcessor(final ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
 
         initialize();
@@ -95,11 +93,9 @@ public class DataProcessor implements Runnable {
                                     packetBytes[0] = 0;
                                     packetBytes[1] = 3;
                                     packetBytes[2] = 0;
-                                    packetBytes[3] = (byte) block;
+                                    packetBytes[3] = block;
 
-                                    for (int i = 4; i < firstDataChunk.length; i++) {
-                                        packetBytes[i] = firstDataChunk[i - 4];
-                                    }
+                                    System.arraycopy(firstDataChunk, 0, packetBytes, 4, firstDataChunk.length - 4);
 
                                     SimplePacket packet = new SimplePacket(packetBytes, data.header);
                                     resourceManager.addDataToPipe(data.header.getPort(), packet);
@@ -177,11 +173,9 @@ public class DataProcessor implements Runnable {
                                     packetBytes[0] = 0;
                                     packetBytes[1] = 3;
                                     packetBytes[2] = 0;
-                                    packetBytes[3] = (byte) block;
+                                    packetBytes[3] = block;
 
-                                    for (int i = 4; i < dataChunk.length; i++) {
-                                        packetBytes[i] = dataChunk[i - 4];
-                                    }
+                                    System.arraycopy(dataChunk, 0, packetBytes, 4, dataChunk.length - 4);
 
                                     SimplePacket packet = new SimplePacket(packetBytes, data.header);
                                     resourceManager.addDataToPipe(data.header.getPort(), packet);
@@ -284,7 +278,7 @@ public class DataProcessor implements Runnable {
             payload[pos++] = character;
         }
 
-        payload[pos++] = 0;
+        payload[pos] = 0;
 
         SimplePacket packet = new SimplePacket(payload, data.header);
         resourceManager.addDataToPipe(data.header.getPort(), packet);
@@ -310,7 +304,7 @@ public class DataProcessor implements Runnable {
             payload[pos++] = character;
         }
 
-        payload[pos++] = 0;
+        payload[pos] = 0;
 
         SimplePacket packet = new SimplePacket(payload, data.header);
         resourceManager.addDataToPipe(data.header.getPort(), packet);
@@ -336,7 +330,7 @@ public class DataProcessor implements Runnable {
             payload[pos++] = character;
         }
 
-        payload[pos++] = 0;
+        payload[pos] = 0;
 
         SimplePacket packet = new SimplePacket(payload, data.header);
         resourceManager.addDataToPipe(data.header.getPort(), packet);
