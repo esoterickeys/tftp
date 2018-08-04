@@ -2,11 +2,10 @@ package data;
 
 public enum MessageState {
     INITIAL(0),
-    RRQ_START(1),
-    RRQ_NEXT(2),
-    WRQ_START(4),
-    WRQ_NEXT(5),
-    END(6);
+    RRQ_NEXT(1),
+    WRQ_NEXT(2),
+    END(3),
+    TERMINATE(4);
 
     private final int state;
 
