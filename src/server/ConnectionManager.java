@@ -20,6 +20,8 @@ public class ConnectionManager implements Runnable {
     }
 
     public void terminate() {
+        channelThreads.get(resourceManager.getServerPort()).interrupt();
+
         try {
             for (Integer port : channelThreads.keySet()) {
                 channelThreads.get(port).join();
@@ -27,6 +29,8 @@ public class ConnectionManager implements Runnable {
         } catch (InterruptedException ie) {
             System.out.println(ie.getMessage());
         }
+
+        System.out.println("Connection manager successfully terminate.");
     }
 
     public void addOutputChannel(int port) {
@@ -41,6 +45,17 @@ public class ConnectionManager implements Runnable {
         channelThreads.put(port, serverOutputThread);
 
         serverOutputThread.start();
+    }
+
+    public void teardownOutputChannel(int port) {
+        try {
+            channelThreads.get(port).join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        channelThreads.remove(port);
+
+        System.out.println("Output channel for port(" + port + ") removed.");
     }
 
     private void initialize() {

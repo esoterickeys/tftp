@@ -12,17 +12,19 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class DataProcessor implements Runnable {
 
     private final ResourceManager resourceManager;
-    private BlockingQueue<SimplePacket> queue;
+    private final int port;
 
+    private BlockingQueue<SimplePacket> queue;
     private MessageState msgState;
 
-
-    public DataProcessor(final ResourceManager resourceManager) {
+    public DataProcessor(final int port, final ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
+        this.port = port;
 
         initialize();
     }
@@ -40,9 +42,16 @@ public class DataProcessor implements Runnable {
         final ByteBuffer outBuffer = ByteBuffer.allocate(4096);
         FileChannel writeChannel = null;
 
-        while (resourceManager.getState().isRunning()) {
+        while (resourceManager.getPortResourceState(port)) {
+            SimplePacket data = null;
+
             try {
-                SimplePacket data = queue.take();
+                data = queue.poll(100, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (data != null) {
                 byte[] tftpData = data.data;
                 byte opsCode = tftpData[1];
 
@@ -245,8 +254,6 @@ public class DataProcessor implements Runnable {
 
                     msgState = MessageState.INITIAL;
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
 
@@ -255,7 +262,7 @@ public class DataProcessor implements Runnable {
     }
 
     private void terminate() {
-
+        System.out.println("Tearing down data processor for port(" + port + ").");
     }
 
     private void generateIllegalTftpOperationPacket(final int opsCode, SimplePacket data) {

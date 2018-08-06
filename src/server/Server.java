@@ -36,6 +36,9 @@ public class Server {
         dataManager = new DataManager(resourceManager);
 
         resourceManager.loadConnectionManager(connectionManager);
+        resourceManager.loadDataManager(dataManager);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::terminate));
     }
 
     private void run() throws InterruptedException {
@@ -55,5 +58,9 @@ public class Server {
 
         connectionManager.terminate();
         dataManager.terminate();
+        resourceManager.terminate();
+
+
+        System.out.println("Server successfully terminated threads, exiting now.");
     }
 }

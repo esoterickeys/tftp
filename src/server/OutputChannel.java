@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.TimeUnit;
 
 public class OutputChannel implements Runnable {
     private DatagramChannel channel;
@@ -21,15 +22,23 @@ public class OutputChannel implements Runnable {
 
     @Override
     public void run() {
-        while (resourceManager.getState().isRunning()) {
+        while (resourceManager.getPortResourceState(port)) {
+            SimplePacket data = null;
+
             try {
-                SimplePacket data = resourceManager.getPipes().get(port).take();
+                data = resourceManager.getPipes().get(port).poll(100, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-                ByteBuffer output = ByteBuffer.wrap(data.data);
+            if (data != null) {
+                try {
+                    ByteBuffer output = ByteBuffer.wrap(data.data);
 
-                channel.send(output, data.header);
-            } catch (IOException | InterruptedException e) {
-                System.out.println(e.getMessage());
+                    channel.send(output, data.header);
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
             }
         }
 
@@ -42,6 +51,7 @@ public class OutputChannel implements Runnable {
     }
 
     private void terminate() {
+        System.out.println("Tearing down output channel for port(" + port + ").");
         unbindChannel();
         closeChannel();
     }

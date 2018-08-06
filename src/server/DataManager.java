@@ -5,6 +5,7 @@ import data.SimplePacket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class DataManager implements Runnable {
 
@@ -22,13 +23,19 @@ public class DataManager implements Runnable {
     @Override
     public void run() {
         while (resourceManager.getState().isRunning()) {
+            SimplePacket data = null;
+
             try {
-                SimplePacket data = resourceManager.getPipes().get(resourceManager.getServerPort()).take();
+                data = resourceManager.getPipes().get(resourceManager.getServerPort()).poll(100, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
+            if (data != null) {
                 if (dataProcessors.get(data.header.getPort()) == null) {
-                    resourceManager.createOutputDataPipe(data.header.getPort());
+                    resourceManager.createDataPipe(data.header.getPort());
 
-                    DataProcessor dataProcessor = new DataProcessor(resourceManager);
+                    DataProcessor dataProcessor = new DataProcessor(data.header.getPort(), resourceManager);
                     Thread dataProcessorThread = new Thread(dataProcessor);
 
                     dataProcessors.put(data.header.getPort(), dataProcessor);
@@ -39,15 +46,28 @@ public class DataManager implements Runnable {
                 } else {
                     dataProcessors.get(data.header.getPort()).addToQueue(data);
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
+
+        terminate();
     }
 
     private void initialize() {
         dataProcessors = new HashMap<>();
         dataProcessorThreads = new HashMap<>();
+    }
+
+    public void teardownProcessor(int port) {
+        try {
+            dataProcessorThreads.get(port).join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        dataProcessorThreads.remove(port);
+        dataProcessors.remove(port);
+
+        System.out.println("Data processor and thread for port(" + port + ") removed.");
     }
 
     public void terminate() {
@@ -62,5 +82,7 @@ public class DataManager implements Runnable {
                 System.out.println(ie.getMessage());
             }
         }
+
+        System.out.println("Data manager successfully terminate.");
     }
 }
